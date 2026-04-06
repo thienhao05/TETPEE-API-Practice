@@ -34,6 +34,7 @@ public class AppDbContext : DbContext
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderDetail> OrderDetails { get; set; }
     public DbSet<ProductCategory> ProductCategories { get; set; }
+    public DbSet<CartDetail> CartDetails { get; set; }
     public DbSet<Category> Categories { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -82,6 +83,12 @@ public class AppDbContext : DbContext
             builder.HasOne(u => u.Seller)
                 .WithOne(s => s.User)
                 .HasForeignKey<Seller>(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            // Do là mình update mối quan hệ, nên mình cần phải setup ở trong này
+            builder.HasOne(u => u.Cart)
+                .WithOne(s => s.User)
+                .HasForeignKey<Cart>(s => s.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
             
             // DeleteBehavior.Cascade: Khi một User bị xóa, thì Seller liên quan cũng sẽ bị xóa theo.
