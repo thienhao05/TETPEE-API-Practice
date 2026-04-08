@@ -14,6 +14,7 @@ using JwtService = TetPee.Service.JwtService;
 using MediaService = TetPee.Service.MediaService;
 using CloudinaryService = TetPee.Service.CloudinaryService;
 using MailService = TetPee.Service.MailService;
+using CartService = TetPee.Service.Cart;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +43,7 @@ builder.Services.AddScoped<IdentityService.IService, IdentityService.Service>();
 builder.Services.AddScoped<ProductService.IService, ProductService.Service>();
 builder.Services.AddScoped<MediaService.IService, CloudinaryService.Service>();
 builder.Services.AddScoped<MailService.IService, MailService.Service>();
+builder.Services.AddScoped<CartService.IService, CartService.Service>();
 
 builder.Services.AddTransient<GlobalExceptionHandlerMiddleware>();
 
