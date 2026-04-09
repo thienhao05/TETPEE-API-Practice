@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using TetPee.Repository;
+using TetPee.Repository.Entity;
 
 namespace TetPee.Service.Cart;
 
@@ -40,9 +41,54 @@ public class Service : IService
         await _dbContext.SaveChangesAsync();
     }
 
-    public Task AddProductToCart(Request.AddProductToCartRequest request)
+    public async Task AddProductToCart(Request.AddProductToCartRequest request)
     {
-        throw new NotImplementedException();
+        var userId = _httpContext.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "UserId")?.Value;
+        
+        var userIdGuid =  Guid.Parse(userId!);
+        
+        var query = _dbContext.Carts.Where(x => 
+            x.UserId == userIdGuid);
+        
+        var cart = await query.FirstOrDefaultAsync();
+
+        if (cart == null)
+        {
+            cart = new Repository.Entity.Cart()
+            {
+                Id = Guid.NewGuid(),
+                UserId = userIdGuid,
+            };
+            
+            _dbContext.Add(cart);
+            await _dbContext.SaveChangesAsync();
+        }
+        
+        var productQuery = _dbContext.CartDetails.Where(x => 
+            x.Cart.Id == cart.Id && 
+            x.ProductId == request.ProductId);
+        
+        // Cộng số lượng
+        var cartExist = await productQuery.FirstOrDefaultAsync();
+        
+        if (cartExist != null)
+        {
+            cartExist.Quantity +=  request.Quantity;
+            _dbContext.Update(cartExist);
+            await _dbContext.SaveChangesAsync();
+            return;
+        }
+
+        //cart chưa tồn tại thì tạo mới
+        var cartDetail = new CartDetail()
+        {
+            CartId = cart.Id,
+            ProductId = request.ProductId,
+            Quantity = request.Quantity,
+        };
+        
+        _dbContext.Add(cartDetail);
+        await _dbContext.SaveChangesAsync();
     }
 
     public Task RemoveProductFromCart(Request.RemoveProductFromCartRequest request)

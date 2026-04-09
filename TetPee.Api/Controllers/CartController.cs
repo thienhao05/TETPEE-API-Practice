@@ -21,4 +21,11 @@ public class CartController : ControllerBase
         await _cartService.CreateCart();
         return Ok(ApiResponseFactory.SuccessResponse(null, "Cart created", HttpContext.TraceIdentifier));
     }
+
+    [HttpPost("product")]
+    public async Task<IActionResult> AddProductToCart(Request.AddProductToCartRequest request)
+    {
+        await _cartService.AddProductToCart(request);
+        return Ok(ApiResponseFactory.SuccessResponse("Successfully", "Product Add To Cart", HttpContext.TraceIdentifier));
+    }
 }
