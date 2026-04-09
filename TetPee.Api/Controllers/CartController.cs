@@ -28,4 +28,13 @@ public class CartController : ControllerBase
         await _cartService.AddProductToCart(request);
         return Ok(ApiResponseFactory.SuccessResponse("Successfully", "Product Add To Cart", HttpContext.TraceIdentifier));
     }
+
+    [HttpDelete("product")]
+    public async Task<IActionResult> DeleteProductFromCart(Request.RemoveProductFromCartRequest request)
+    {
+        // var users = _dbContext.Users.ToList();
+        // return Ok(users);
+        await _cartService.RemoveProductFromCart(request);
+        return Ok(ApiResponseFactory.SuccessResponse("Successfully", "Product Removed", HttpContext.TraceIdentifier));
+    }
 }

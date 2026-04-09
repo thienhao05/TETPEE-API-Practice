@@ -91,9 +91,25 @@ public class Service : IService
         await _dbContext.SaveChangesAsync();
     }
 
-    public Task RemoveProductFromCart(Request.RemoveProductFromCartRequest request)
+    public async Task RemoveProductFromCart(Request.RemoveProductFromCartRequest request)
     {
-        throw new NotImplementedException();
+        var userId = _httpContext.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "UserId")?.Value;
+
+        var userIdGuid = Guid.Parse(userId!);
+
+        var query = _dbContext.CartDetails.Where(x =>
+            x.Cart.UserId == userIdGuid &&
+            x.ProductId == request.ProductId);
+
+        var cartDetail = await query.FirstOrDefaultAsync();
+
+        if (cartDetail == null)
+        {
+            throw new Exception("Product not exist in cart");
+        }
+        
+        _dbContext.Remove(cartDetail);
+        await _dbContext.SaveChangesAsync();
     }
 
     public Task<List<Response.ProductResponse>> GetCart()
