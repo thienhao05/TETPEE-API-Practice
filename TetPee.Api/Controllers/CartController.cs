@@ -14,6 +14,14 @@ public class CartController : ControllerBase
     {
         _cartService = cartService;
     }
+
+
+    [HttpGet("")]
+    public async Task<IActionResult> GetCart()
+    {
+        var result = await _cartService.GetCart();
+        return Ok(ApiResponseFactory.SuccessResponse(result, "Cart Response", HttpContext.TraceIdentifier));
+    }
     
     [HttpPost("")]
     public async Task<IActionResult> CreateCart()
@@ -37,4 +45,6 @@ public class CartController : ControllerBase
         await _cartService.RemoveProductFromCart(request);
         return Ok(ApiResponseFactory.SuccessResponse("Successfully", "Product Removed", HttpContext.TraceIdentifier));
     }
+    
+    
 }
