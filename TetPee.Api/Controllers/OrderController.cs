@@ -22,4 +22,11 @@ public class OrderController : ControllerBase
         var result = await _orderService.CreateOrder(request);
         return Ok(ApiResponseFactory.SuccessResponse(result, "Order created", HttpContext.TraceIdentifier));
     }
+
+    [HttpPost("sepay/webhook")]
+    public async Task<IActionResult> SepayWebhook(Request.SepayWebhookRequest request)
+    {
+        await _orderService.SePayWebhookHandler(request);
+        return Ok(ApiResponseFactory.SuccessResponse("", "Webhook response",  HttpContext.TraceIdentifier));
+    }
 }
