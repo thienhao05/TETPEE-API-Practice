@@ -1,9 +1,11 @@
 using CloudinaryDotNet;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using Quartz;
 using TetPee.Api.Extensions;
 using TetPee.Api.Middlewares;
 using TetPee.Repository;
+using TetPee.Service.BackgroundJobService;
 using TetPee.Service.Models;
 using UserService = TetPee.Service.User;
 using CategoryService = TetPee.Service.Category;
@@ -46,6 +48,27 @@ builder.Services.AddScoped<MediaService.IService, CloudinaryService.Service>();
 builder.Services.AddScoped<MailService.IService, MailService.Service>();
 builder.Services.AddScoped<CartService.IService, CartService.Service>();
 builder.Services.AddScoped<OrderService.IService, OrderService.Service>();
+
+builder.Services.AddQuartz(options =>
+{
+    var jobKey = new JobKey(nameof(ProcessTransactionPendingJob));
+
+    options
+        .AddJob<ProcessTransactionPendingJob>(jobKey)
+        .AddTrigger(trigger =>
+            trigger
+                .ForJob(jobKey)
+                .WithSimpleSchedule(schedule => schedule
+                    .WithIntervalInMinutes(1) //thời gian job thực thi //2 
+                    .RepeatForever() //bắt đầu khi app chạy
+                )
+            // cứ 1 phút thì lặp lại 1 lần
+        );
+});
+builder.Services.AddQuartzHostedService(options =>
+{
+    options.WaitForJobsToComplete = true;
+});
 
 builder.Services.AddTransient<GlobalExceptionHandlerMiddleware>();
 
