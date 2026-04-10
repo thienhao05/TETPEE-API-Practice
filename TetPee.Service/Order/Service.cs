@@ -119,4 +119,91 @@ public class Service : IService
         
         return response;
     }
+
+    public async Task SePayWebhookHandler(Request.SepayWebhookRequest request)
+    {
+        var description = request.Code; // TETPEEORDERID
+
+        var raw = description.Replace("TETPEE", ""); // TETPEEORDERID -> ORDERID
+        
+        Guid? orderId = null;
+
+        if (raw.Length == 32)
+            // Mặc định Guid có 32 kí tự
+            // còn nếu mà có dấu gạch nối thì là 36 kí tự
+        {
+            // Vì ORDERID theo format là không có dấu gạch ngang
+            // Sample: 002da871-503a-4f30-884a-14457bbdaef8
+            var formatted = 
+                $"{raw.Substring(0, 8)}-" +
+                $"{raw.Substring(8, 4)}-" +
+                $"{raw.Substring(12, 4)}-" +
+                $"{raw.Substring(16, 4)}-" +
+                $"{raw.Substring(20, 12)}";
+            
+            // Id nhưng mà hiện nó đang theo string, chuẩn GUID rồi đó
+
+            if (Guid.TryParse(formatted, out var guid))
+            {
+                // dùng được
+                orderId =  guid;
+            }
+            
+            // orderId = Guid.Parse(formatted);
+        }
+        else
+        {
+            // Không dùng được
+            throw new Exception("Invalid description format");
+        }
+
+        if (orderId == null)
+        {
+            throw new Exception("OrderId not found in description");
+        }
+
+        var query = _dbContext.Orders
+            .Where(x => x.Id == orderId)
+            .Include(x => x.OrderDetails); 
+        // Khi mà thanh toán thành công thì xóa ra khỏi Order
+
+        var order = await query.FirstOrDefaultAsync();
+
+        if (order == null)
+        {
+            throw new Exception("Order not found");
+        }
+
+        if (order.Status != "Pending") // đơn hàng đã xử lý rồi mà
+        {
+            throw new Exception("Order already processed");
+        }
+
+        if (order.TotalAmount != request.TransferAmount)
+        {
+            throw new Exception("Invalid transfer amount");
+        }
+        
+        order.Status = "Completed";
+        _dbContext.Update(order);
+        await _dbContext.SaveChangesAsync();
+        
+        // Tìm những sản phẩm chứa trong cart với các id sau productIds của UserId
+        // Tìm đc rồi thì xóa đi
+        // _dbContext.RemoveRange();
+        
+        var productIds = order.OrderDetails.Select(x => 
+            x.ProductId).ToList();
+        
+        // Tìm những sản phẩm chứa trong cart với các id sau của productIds của userid
+        var queryProdCart = _dbContext.CartDetails.Where(x =>
+            x.Cart.UserId == order.UserId &&
+            productIds.Contains(x.ProductId));
+        
+        var removeCartDetails = await queryProdCart.ToListAsync();
+        _dbContext.RemoveRange(removeCartDetails);
+        
+        await _dbContext.SaveChangesAsync();
+
+    }
 }
